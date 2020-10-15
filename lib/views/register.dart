@@ -1,3 +1,4 @@
+import 'package:chatapp/helper/helperfunctions.dart';
 import 'package:chatapp/services/auth.dart';
 import 'package:chatapp/services/database.dart';
 import 'package:chatapp/views/animation.dart';
@@ -19,18 +20,33 @@ AuthMethods authMethods = new AuthMethods();
 
 DatabaseMethods databaseMethods = new DatabaseMethods();
 
-final formKey = GlobalKey<FormState>();
 
 class _RegisterState extends State<Register> {
+
+  final formKey = GlobalKey<FormState>();
+
+
   bool isLoading = false;
   bool _showPassword = false;
 
-  @override
-  void dispose() {
-    passwordTextEditingController.dispose();
-    super.dispose();
-  }
 
+  // contactNumberLength(String value){
+  //   if(value.length != 10){
+  //    return Text("Incorrect Contact Length");
+  //   }
+  // }
+
+  // contactNumberRegExp(String value){
+  //   return RegExp(r'(^[0-9]{10,12}$)').hasMatch(value) ? null : "Enter correct Contact Number";
+  // }
+
+  // @override
+  // void dispose() {
+  //   passwordTextEditingController.dispose();                        //ye ek baar hatake dekhiyo
+  //   super.dispose();
+  // }
+  TextEditingController phonenumberTextEditingController = 
+      new TextEditingController();
   TextEditingController userNameTextEditingController =
       new TextEditingController();
   TextEditingController emailTextEditingController =
@@ -42,9 +58,16 @@ class _RegisterState extends State<Register> {
     if (formKey.currentState.validate()) {
       
        Map<String, String> userInfoMap = {
+          "contactno" : phonenumberTextEditingController.text,
           "name" : userNameTextEditingController.text,
           "email" : emailTextEditingController.text
         };
+
+        //to save details written in register formfields
+        HelperFunctions.saveUserContactSharedPreference(phonenumberTextEditingController.text);
+        HelperFunctions.saveUserNameSharedPreference(userNameTextEditingController.text);
+        HelperFunctions.saveUserEmailSharedPreference(emailTextEditingController.text);
+
 
       setState(() {
         isLoading = true;
@@ -58,6 +81,9 @@ class _RegisterState extends State<Register> {
 
 
         databaseMethods.uploadUserInfo(userInfoMap);
+
+        HelperFunctions.saveUserLoggedInSharedPreference(true);
+
 
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => ChatRoom()));
@@ -157,112 +183,131 @@ class _RegisterState extends State<Register> {
                           children: <Widget>[
                             FadeAnimation(
                                 1.8,
-                                Container(
-                                  padding: EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: Color.fromRGBO(
-                                                143, 148, 251, .2),
-                                            blurRadius: 20.0,
-                                            offset: Offset(0, 10))
-                                      ]),
-                                  child: Column(
-                                    children: <Widget>[
-                                      Container(
-                                        padding: EdgeInsets.all(8.0),
-                                        decoration: BoxDecoration(
-                                            border: Border(
-                                                bottom: BorderSide(
-                                                    color: Colors.grey[100]))),
-                                        child: Form(
-                                          key: formKey,
-                                          child: Column(
-                                            children: [
-                                              TextFormField(
-                                                validator: (val) {
-                                                  return val.isEmpty ||
-                                                          val.length < 4
-                                                      ? "Please Provide Username "
-                                                      : null;
-                                                },
-                                                controller:
-                                                    userNameTextEditingController,
-                                                decoration: InputDecoration(
-                                                    border: InputBorder.none,
-                                                    prefixIcon: Icon(
-                                                      Icons.perm_identity,
-                                                      color: Colors.grey[400],
-                                                    ),
-                                                    hintText: "Username",
-                                                    hintStyle: TextStyle(
-                                                        color:
-                                                            Colors.grey[400])),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: EdgeInsets.all(8.0),
-                                        decoration: BoxDecoration(
-                                            border: Border(
-                                                bottom: BorderSide(
-                                                    color: Colors.grey[100]))),
-                                        child: TextFormField(
-                                          validator: (val) {
-                                            return RegExp(
-                                                        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-      zA-Z0-9]+\.[a-zA-Z]+")
-                                                    .hasMatch(val)
-                                                ? null
-                                                : "Enter correct email";
-                                          },
-                                          controller:
-                                              emailTextEditingController,
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none,
-                                              prefixIcon: Icon(Icons.email,
-                                                  color: Colors.grey[400]),
-                                              hintText: "Email or Phone number",
-                                              hintStyle: TextStyle(
-                                                  color: Colors.grey[400])),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                           controller:
-                                            passwordTextEditingController,
-                                         // obscureText: true,
-                                          validator: (val) {
-                                            return val.length > 6
-                                                ? null
-                                                : "Please Provide a Strong Password";
-                                          },
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none,
-                                              prefixIcon: Icon(Icons.lock,
-                                                  color: Colors.grey[400]),
-                                              hintText: "Password",
-                                              suffixIcon: GestureDetector(
-                                                onTap: (){
-                                                  setState(() {
-                                                    _showPassword = !_showPassword;
-                                                  });
-                                                },
-                                                child: Icon(
-                                                  _showPassword ? Icons.visibility : Icons.visibility_off,
+                                Form(
+                                  key: formKey,
+                                      child: Container(                                                           //form
+                                    padding: EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                              color: Color.fromRGBO(
+                                                  143, 148, 251, .2),
+                                              blurRadius: 20.0,
+                                              offset: Offset(0, 10))
+                                        ]),
+                                    child: Column(
+                                      children: <Widget>[
+                                        Container(
+                                          padding: EdgeInsets.all(8.0),
+                                          decoration: BoxDecoration(
+                                              border: Border(
+                                                  bottom: BorderSide(
+                                                      color: Colors.grey[100]))),
+                                            child: Column(
+                                              children: [
+                                                TextFormField(
+                                                  validator: (val) {
+                                                    return val.isEmpty ||
+                                                            val.length < 4
+                                                        ? "Please Provide Username "
+                                                        : null;
+                                                  },
+                                                  controller:
+                                                      userNameTextEditingController,
+                                                  decoration: InputDecoration(
+                                                      border: InputBorder.none,
+                                                      prefixIcon: Icon(
+                                                        Icons.perm_identity,
+                                                        color: Colors.grey[400],
+                                                      ),
+                                                      hintText: "Username",
+                                                      hintStyle: TextStyle(
+                                                          color:
+                                                              Colors.grey[400])),
                                                 ),
-                                              ),
-                                              hintStyle: TextStyle(
-                                                  color: Colors.grey[400]),
-                                          ),
-                                   obscureText: !_showPassword,
+                                              ],
+                                            ),
+                                        ),
+                                         Container(
+                                          padding: EdgeInsets.all(8.0),
+                                          decoration: BoxDecoration(
+                                              border: Border(
+                                                  bottom: BorderSide(
+                                                      color: Colors.grey[100]))),
+                                          child: TextFormField(
+                                            validator: (val) {
+                                               return RegExp(r'(^[0-9]{10,12}$)').hasMatch(val) && val.isNotEmpty ? null : "Enter correct Contact Number";
+                                            },
+                                            controller:
+                                                phonenumberTextEditingController,
+                                            decoration: InputDecoration(
+                                                border: InputBorder.none,
+                                                prefixIcon: Icon(Icons.phone,
+                                                    color: Colors.grey[400]),
+                                                labelText: '+(91) | ',
+                                                hintText: "Phone or Mobile number",
+                                                hintStyle: TextStyle(
+                                                    color: Colors.grey[400])),
                                           ),
                                         ),
-                                    ],
+                                        Container(
+                                          padding: EdgeInsets.all(8.0),
+                                          decoration: BoxDecoration(
+                                              border: Border(
+                                                  bottom: BorderSide(
+                                                      color: Colors.grey[100]))),
+                                          child: TextFormField(
+                                            validator: (val) {
+                                              return RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(val) && val.isNotEmpty ? null : "Enter correct email";
+
+                                            },
+                                            controller:
+                                                emailTextEditingController,
+                                            decoration: InputDecoration(
+                                                border: InputBorder.none,
+                                                prefixIcon: Icon(Icons.email,
+                                                    color: Colors.grey[400]),
+                                                hintText: "Email",
+                                                hintStyle: TextStyle(
+                                                    color: Colors.grey[400])),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                             controller:
+                                              passwordTextEditingController,
+                                           // obscureText: true,
+                                            validator: (val) {
+                                              return val.length > 6
+                                                  ? null
+                                                  : "Please Provide a Strong Password";
+                                            },
+                                            decoration: InputDecoration(
+                                                border: InputBorder.none,
+                                                prefixIcon: Icon(Icons.lock,
+                                                    color: Colors.grey[400]),
+                                                hintText: "Password",
+                                                suffixIcon: GestureDetector(
+                                                  onTap: (){
+                                                    setState(() {
+                                                      _showPassword = !_showPassword;
+                                                    });
+                                                  },
+                                                  child: Icon(
+                                                    _showPassword ? Icons.visibility : Icons.visibility_off,
+                                                  ),
+                                                ),
+                                                hintStyle: TextStyle(
+                                                    color: Colors.grey[400]),
+                                            ),
+                                     obscureText: !_showPassword,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                 )),
                             SizedBox(

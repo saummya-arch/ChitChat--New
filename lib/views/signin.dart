@@ -1,5 +1,9 @@
+import 'package:chatapp/helper/helperfunctions.dart';
+import 'package:chatapp/services/auth.dart';
+import 'package:chatapp/services/database.dart';
 import 'package:chatapp/views/animation.dart';
-import 'package:chatapp/views/register.dart';
+import 'package:chatapp/views/chatroom.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class SignIn extends StatefulWidget {
@@ -12,8 +16,64 @@ class SignIn extends StatefulWidget {
 }
 
 class _SignInState extends State<SignIn> {
+
+
+  final formKey = GlobalKey<FormState>();
+
+  AuthMethods authMethods = new AuthMethods();
+
+  DatabaseMethods databaseMethods = new DatabaseMethods();
+
+
   bool _rememberMe = false;
   bool _showPassword = false;
+
+
+   TextEditingController emailTextEditingController =
+      new TextEditingController();
+    TextEditingController passwordTextEditingController =
+      new TextEditingController();
+
+
+  bool isLoading = false;
+
+  QuerySnapshot snapshotUserInfo;
+
+  afterSignInValidation(){
+
+    if(formKey.currentState.validate()){
+
+
+      HelperFunctions.saveUserEmailSharedPreference(emailTextEditingController.text);
+
+      databaseMethods.getUserByUserEmail(emailTextEditingController.text)
+          .then((val){
+              snapshotUserInfo = val;
+              HelperFunctions.saveUserNameSharedPreference(snapshotUserInfo.documents[0].data["name"]);
+             // print("${snapshotUserInfo.documents[0].data["name"]} this is my world");
+          });
+
+
+
+      setState(() {
+        isLoading = true;
+      });
+
+
+      authMethods.signInWithEmailAndPassword(emailTextEditingController.text, passwordTextEditingController.text)
+          .then((val){
+             if(val!= null) {
+                HelperFunctions.saveUserLoggedInSharedPreference(true);
+
+             Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => ChatRoom()));
+             }
+
+          });      
+      }
+
+  }    
+
 
   @override
   Widget build(BuildContext context) {
@@ -93,60 +153,74 @@ class _SignInState extends State<SignIn> {
                     children: <Widget>[
                       FadeAnimation(
                           1.8,
-                          Container(
-                            padding: EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Color.fromRGBO(143, 148, 251, .2),
-                                      blurRadius: 20.0,
-                                      offset: Offset(0, 10))
-                                ]),
-                            child: Column(
-                              children: <Widget>[
-                                Container(
-                                  padding: EdgeInsets.all(8.0),
-                                  decoration: BoxDecoration(
-                                      border: Border(
-                                          bottom: BorderSide(
-                                              color: Colors.grey[100]))),
-                                  child: TextField(
-                                    decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        prefixIcon: Icon(Icons.email,
-                                            color: Colors.grey[400]),
-                                        hintText: "Email or Phone number",
-                                        hintStyle:
-                                            TextStyle(color: Colors.grey[400])),
-                                  ),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: TextField(
-                                    decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        prefixIcon: Icon(Icons.lock,
-                                            color: Colors.grey[400]),
-                                        hintText: "Password",
-                                        suffixIcon: GestureDetector(
-                                        onTap: (){
-                                          setState(() {
-                                            _showPassword = !_showPassword;
-                                          });
-                                        },
-                                        child: Icon(
-                                          _showPassword ? Icons.visibility : Icons.visibility_off,
-                                        ),
-                                        ),
-                                         hintStyle:
-                                            TextStyle(color: Colors.grey[400]),
+                          Form(
+                            key: formKey,
+                                child: Container(
+                              padding: EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Color.fromRGBO(143, 148, 251, .2),
+                                        blurRadius: 20.0,
+                                        offset: Offset(0, 10))
+                                  ]),
+                              child: Column(
+                                children: <Widget>[
+                                  Container(
+                                    padding: EdgeInsets.all(8.0),
+                                    decoration: BoxDecoration(
+                                        border: Border(
+                                            bottom: BorderSide(
+                                                color: Colors.grey[100]))),
+                                    child: TextFormField(
+                                      validator: (val) {
+                                              return RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(val) && val.isNotEmpty ? null : "Enter correct email";
+
+                                            },
+                                      controller: emailTextEditingController,
+                                      decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          prefixIcon: Icon(Icons.email,
+                                              color: Colors.grey[400]),
+                                          hintText: "Email",
+                                          hintStyle:
+                                              TextStyle(color: Colors.grey[400])),
                                     ),
-                                    obscureText: !_showPassword,
                                   ),
-                                )
-                              ],
+                                  Container(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: TextFormField(
+                                       validator: (val) {
+                                              return val.length > 6
+                                                  ? null
+                                                  : "Please Provide a Strong Password";
+                                            },
+                                      controller: passwordTextEditingController,
+                                      decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          prefixIcon: Icon(Icons.lock,
+                                              color: Colors.grey[400]),
+                                          hintText: "Password",
+                                          suffixIcon: GestureDetector(
+                                          onTap: (){
+                                            setState(() {
+                                              _showPassword = !_showPassword;
+                                            });
+                                          },
+                                          child: Icon(
+                                            _showPassword ? Icons.visibility : Icons.visibility_off,
+                                          ),
+                                          ),
+                                           hintStyle:
+                                              TextStyle(color: Colors.grey[400]),
+                                      ),
+                                      obscureText: !_showPassword,
+                                    ),
+                                  )
+                                ],
+                              ),
                             ),
                           )),
 
@@ -227,7 +301,9 @@ class _SignInState extends State<SignIn> {
                                   Color.fromRGBO(143, 148, 251, .6),
                                 ])),
                             child: RaisedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                afterSignInValidation();
+                              },
                               color: Colors.indigo[400],
                               child: Center(
                                 child: Text(
